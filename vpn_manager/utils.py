@@ -37,4 +37,25 @@ def get_connected_usernames():
         return set()
     return users
 
-print(get_connected_usernames())
+
+def kill_user(username):
+    """Admin view to send kill command via Telnet"""
+    try:
+        # Connect to management interface
+        tn = telnetlib.Telnet(MGMT_HOST, MGMT_PORT, timeout=MGMT_TIMEOUT)
+        # Read and discard the initial banner line
+        tn.read_until(b"\n", timeout=MGMT_TIMEOUT)
+        # Send kill command for the common name
+        cmd = f"kill {username}\n".encode('utf-8')
+        tn.write(cmd)
+        # Optionally read until the END marker to confirm
+        tn.read_until(b"END\n", timeout=MGMT_TIMEOUT)
+        tn.close()
+        return True
+        # self.message_user(request, f"Sent kill command for {obj.username}", messages.SUCCESS)
+    except Exception as e:
+        # print(e)
+        return False
+        # self.message_user(request, f"Error sending kill command for {obj.username}: {e}", messages.ERROR)
+    # Redirect back to changelist
+    # return redirect(request.META.get('HTTP_REFERER', 'admin:index'))

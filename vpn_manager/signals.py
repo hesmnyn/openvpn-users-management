@@ -3,8 +3,10 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import VPNUser
+from .utils import kill_user
 from django.conf import settings
 from datetime import date
+
 PSW_FILE = settings.OPENVPN_PSW_FILE
 
 
@@ -34,6 +36,7 @@ def update_psw_file_on_save(sender, instance, **kwargs):
         users[instance.username] = instance.openvpn_password
     else:
         users.pop(instance.username, None)
+        kill_user(instance.username)
     _write_users(users)
 
 
@@ -41,4 +44,5 @@ def update_psw_file_on_save(sender, instance, **kwargs):
 def remove_psw_file_on_delete(sender, instance, **kwargs):
     users = _load_users()
     users.pop(instance.username, None)
+    kill_user(instance.username)
     _write_users(users)
