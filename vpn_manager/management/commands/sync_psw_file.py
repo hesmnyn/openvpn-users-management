@@ -31,3 +31,6 @@ class Command(BaseCommand):
         _write_users(users)
         self.stdout.write(self.style.SUCCESS(
             f"Synced {len(users)} users to {PSW_FILE}"))
+        expired_users = VPNUser.objects.exclude(
+            is_active=True, expiry_date__gte=date.today())
+        expired_users.update(is_active=False)
