@@ -5,7 +5,7 @@ import telnetlib
 MGMT_HOST = os.getenv('OPENVPN_MGMT_HOST', '127.0.0.1')
 MGMT_PORT = int(os.getenv('OPENVPN_MGMT_PORT', 7505))
 MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
-
+OPEN_VPN_LOG = os.getenv('OPEN_VPN_LOG', '/var/log/openvpn/status.log')
 
 def get_connected_usernames():
     """
@@ -37,6 +37,25 @@ def get_connected_usernames():
         return set()
     return users
 
+
+def get_connected_usernames_from_file():
+    """
+    Reads the OpenVPN status log file and returns a set of usernames (common names) currently connected.
+    """
+    users = set()
+    try:
+        # Open and read the status log file
+        with open(OPEN_VPN_LOG, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                # Parse lines starting with CLIENT_LIST
+                if line.startswith('CLIENT_LIST'):
+                    parts = line.strip().split(',')
+                    if len(parts) > 1:
+                        users.add(parts[1])
+    except Exception:
+        # On error (file not found, permission issue), return an empty set
+        return set()
+    return users
 
 def kill_user(username):
     """Admin view to send kill command via Telnet"""

@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.utils.html import format_html
 from django.utils import timezone
 from .models import VPNUser
-from .utils import get_connected_usernames
+from .utils import get_connected_usernames, get_connected_usernames_from_file
 from .utils import kill_user
  
 
@@ -25,7 +25,7 @@ class VPNUserAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         # Fetch connected users once per request
-        self._connected = get_connected_usernames()
+        self._connected = get_connected_usernames_from_file()
         return qs
 
     def is_connected(self, obj):
