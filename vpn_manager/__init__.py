@@ -1,0 +1,1 @@
+default_app_config = 'vpn_manager.apps.VpnManagerConfig'
