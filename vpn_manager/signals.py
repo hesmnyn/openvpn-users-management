@@ -32,7 +32,7 @@ def _write_users(users):
 def update_psw_file_on_save(sender, instance, **kwargs):
     users = _load_users()
     # If user is active, add/update; otherwise remove
-    if instance.is_active and instance.expiry_date >= date.today():
+    if instance.is_active:
         users[instance.username] = instance.openvpn_password
     else:
         users.pop(instance.username, None)
