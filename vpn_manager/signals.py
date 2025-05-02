@@ -36,8 +36,8 @@ def update_psw_file_on_save(sender, instance, **kwargs):
         users[instance.username] = instance.openvpn_password
     else:
         users.pop(instance.username, None)
-        kill_user(instance.username)
     _write_users(users)
+    kill_user(instance.username)
 
 
 @receiver(post_delete, sender=VPNUser)
