@@ -20,4 +20,4 @@ class Command(BaseCommand):
             is_active=True, expiry_date__gte=date.today())
         for user in expired_users:
             kill_user(user.username)
-        self.stdout.write(self.style.SUCCESS(f"Synced {len(expired_users)} users"))
+        self.stdout.write(self.style.SUCCESS(f"Killed {len(expired_users)} users"))
