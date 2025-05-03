@@ -1,17 +1,16 @@
 import os
 import telnetlib
 from django.contrib import admin, messages
-from django.db import models
+from django.db import models, connection
+from django.db.models import F, Value, IntegerField
+from django.db.models.functions import Cast, Substr
 from django.contrib.admin.widgets import AdminDateWidget
-
 from django.urls import path
 from django.shortcuts import redirect
 from django.utils.html import format_html
-from django.utils import timezone
+
 from .models import VPNUser
-from .utils import get_client_info, get_connected_usernames, get_connected_usernames_from_file
-from .utils import kill_user
- 
+from .utils import get_client_info, get_connected_usernames, get_connected_usernames_from_file, kill_user
 
 # Management interface configuration
 MGMT_HOST = os.getenv('OPENVPN_MGMT_HOST', '127.0.0.1')
@@ -21,7 +20,7 @@ MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
 @admin.register(VPNUser)
 class VPNUserAdmin(admin.ModelAdmin):
     list_display = (
-        'username',
+        'username_natural',
         'openvpn_password',
         'expiry_date',
         'is_active',
@@ -32,21 +31,58 @@ class VPNUserAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_active',)
     search_fields = ('username',)
-    ordering = ('username',)
     formfield_overrides = {
-        models.DateField:    {'widget': AdminDateWidget},
+        models.DateField: {'widget': AdminDateWidget},
     }
+
     class Media:
         js = ('vpn_manager/js/admin-copy-cell.js',)
-        css = {
-            'all': ('vpn_manager/css/admin-copy-cell.css',)
-        }
+        css = {'all': ('vpn_manager/css/admin-copy-cell.css',)}
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # Fetch current client info once
+        # Fetch live client info
         self._client_info = get_client_info()
+
+        # Annotate with the numeric part of username for natural sorting
+        # Use regex on PostgreSQL, fallback to Substr on SQLite
+        vendor = connection.vendor
+        if vendor == 'postgresql':
+            from django.db.models import Func
+            class RegexpReplace(Func):
+                function = 'regexp_replace'
+                arity = 4
+
+            qs = qs.annotate(
+                _username_num=Cast(
+                    RegexpReplace(
+                        F('username'),
+                        Value(r'\D+'),
+                        Value(''),
+                        Value('g'),
+                    ),
+                    output_field=IntegerField(),
+                )
+            )
+        else:
+            # Assuming usernames have a fixed alphabetic prefix of length 4 (e.g. 'test')
+            # Adjust the 5 below if your prefix length differs +1 (start index for digits)
+            qs = qs.annotate(
+                _username_num=Cast(
+                    Substr('username', 5),
+                    output_field=IntegerField(),
+                )
+            )
+
+        # Default ordering by the annotated integer if no user-specified sort
+        if 'o' not in request.GET:
+            qs = qs.order_by('_username_num')
         return qs
+
+    def username_natural(self, obj):
+        return obj.username
+    username_natural.admin_order_field = '_username_num'
+    username_natural.short_description = 'Username'
 
     def is_connected(self, obj):
         return obj.username in self._client_info
@@ -76,12 +112,12 @@ class VPNUserAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def kill_user(self, request, pk, *args, **kwargs):
-        """Admin view to send kill command via Telnet"""
         obj = self.get_object(request, pk)
         try:
-            res = kill_user(obj.username)
-            self.message_user(request, f"Sent kill command for {obj.username}", messages.SUCCESS) if res else self.message_user(request, f"Error sending kill command for {obj.username}", messages.ERROR)
+            success = kill_user(obj.username)
+            level = messages.SUCCESS if success else messages.ERROR
+            msg = f"{'Disconnected' if success else 'Error disconnecting'} {obj.username}"
         except Exception as e:
-            self.message_user(request, f"Error sending kill command for {obj.username}: {e}", messages.ERROR)
-        # Redirect back to changelist
+            level, msg = messages.ERROR, f"Error disconnecting {obj.username}: {e}"
+        self.message_user(request, msg, level)
         return redirect(request.META.get('HTTP_REFERER', 'admin:index'))

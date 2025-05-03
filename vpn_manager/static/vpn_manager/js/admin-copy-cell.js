@@ -1,7 +1,7 @@
 // admin-copy-cell.js
 document.addEventListener("DOMContentLoaded", () => {
   // Fields we want copy-buttons for
-  const copyFields = ["username", "openvpn_password", "expiry_date"];
+  const copyFields = ["username_natural", "openvpn_password", "expiry_date"];
 
   const table = document.querySelector("#result_list");
   if (!table) return;
