@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (fieldName === 'expiry_date') {
             const parts = raw.match(/^(\w+) (\d{1,2}), (\d{4})$/);
             if (parts) {
-                const mnames = {
+                const names = {
                     Jan: 1,
                     Feb: 2,
                     March: 3,
