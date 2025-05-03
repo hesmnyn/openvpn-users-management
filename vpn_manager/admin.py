@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.utils.html import format_html
 from django.utils import timezone
 from .models import VPNUser
-from .utils import get_connected_usernames, get_connected_usernames_from_file
+from .utils import get_client_info, get_connected_usernames, get_connected_usernames_from_file
 from .utils import kill_user
  
 
@@ -17,26 +17,40 @@ MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
 
 @admin.register(VPNUser)
 class VPNUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'expiry_date', 'is_active', 'is_connected', 'kill_button')
+    list_display = (
+        'username',
+        'expiry_date',
+        'is_active',
+        'is_connected',
+        'real_address',
+        'virtual_address',
+        'kill_button',
+    )
     list_filter = ('is_active',)
     search_fields = ('username',)
     ordering = ('username',)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # Fetch connected users once per request
-        self._connected = get_connected_usernames_from_file()
+        # Fetch current client info once
+        self._client_info = get_client_info()
         return qs
 
     def is_connected(self, obj):
-        """Boolean indicator if the user is currently connected."""
-        return obj.username in getattr(self, '_connected', set())
+        return obj.username in self._client_info
     is_connected.boolean = True
     is_connected.short_description = 'Connected?'
 
+    def real_address(self, obj):
+        return self._client_info.get(obj.username, {}).get('real_address', '')
+    real_address.short_description = 'Real Address'
+
+    def virtual_address(self, obj):
+        return self._client_info.get(obj.username, {}).get('virtual_address', '')
+    virtual_address.short_description = 'Virtual Address'
+
     def kill_button(self, obj):
-        """Render a Kill link if the user is connected"""
-        if obj.username in getattr(self, '_connected', set()):
+        if obj.username in self._client_info:
             url = f"kill/{obj.pk}/"
             return format_html('<a class="button" href="{}">Disconnect</a>', url)
         return '-'

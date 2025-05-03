@@ -37,6 +37,31 @@ def get_connected_usernames():
         return set()
     return users
 
+def get_client_info():
+    """
+    Connects to the OpenVPN management interface via Telnet,
+    issues 'status', and returns a dict mapping username -> {
+        'real_address': <Real Address>,
+        'virtual_address': <Virtual Address>
+    } for all currently connected clients.
+    """
+    info = {}
+    try:
+        with open(OPEN_VPN_LOG, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                if line.startswith('CLIENT_LIST'):
+                    parts = line.split(',')
+                    # parts: ['CLIENT_LIST', username, real_addr, virt_addr, ...]
+                    if len(parts) >= 4:
+                        _, username, real_addr, virt_addr = parts[:4]
+                        info[username] = {
+                            'real_address': real_addr,
+                            'virtual_address': virt_addr,
+                        }
+    except Exception:
+        # On any error, return what we have (possibly empty)
+        pass
+    return info
 
 def get_connected_usernames_from_file():
     """
