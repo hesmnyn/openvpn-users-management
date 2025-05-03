@@ -1,6 +1,9 @@
 import os
 import telnetlib
 from django.contrib import admin, messages
+from django.db import models
+from django.contrib.admin.widgets import AdminDateWidget
+
 from django.urls import path
 from django.shortcuts import redirect
 from django.utils.html import format_html
@@ -19,6 +22,7 @@ MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
 class VPNUserAdmin(admin.ModelAdmin):
     list_display = (
         'username',
+        'openvpn_password',
         'expiry_date',
         'is_active',
         'is_connected',
@@ -29,6 +33,14 @@ class VPNUserAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('username',)
     ordering = ('username',)
+    formfield_overrides = {
+        models.DateField:    {'widget': AdminDateWidget},
+    }
+    class Media:
+        js = ('vpn_manager/js/admin-copy-cell.js',)
+        css = {
+            'all': ('vpn_manager/css/admin-copy-cell.css',)
+        }
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

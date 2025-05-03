@@ -1,0 +1,10 @@
+.copy-cell-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+  }
+  .copy-cell-btn:focus {
+    outline: 1px dotted #666;
+  }
+  
