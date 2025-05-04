@@ -76,21 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
   
           let textToCopy;
           if (fieldName === 'expiry_date') {
-            const parts = raw.match(/^(\w+) (\d{1,2}), (\d{4})$/);
+            const parts = raw.match(/^(\w+\.?) (\d{1,2}), (\d{4})$/);
             if (parts) {
                 const names = {
-                    Jan: 1,
-                    Feb: 2,
+                    'Jan.': 1,
+                    'Feb.': 2,
                     March: 3,
                     April: 4,
                     May: 5,
                     June: 6,
                     July: 7,
-                    Aug: 8,
-                    Sept: 9,
-                    Oct: 10,
-                    Nov: 11,
-                    Dec: 12,
+                    'Aug.': 8,
+                    'Sept.': 9,
+                    'Oct.': 10,
+                    'Nov.': 11,
+                    'Dec.': 12,
                   };
               const mm = String(names[parts[1]]).padStart(2,'0');
               const dd = String(parts[2]).padStart(2,'0');
