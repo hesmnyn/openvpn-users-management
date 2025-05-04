@@ -68,6 +68,11 @@ class Command(BaseCommand):
                     'expiry_date': exp_date,
                 }
             )
+            self.stdout.write(
+                self.style.NOTICE(
+                    f"Imported/updated {username} VPNUser from DB"
+                )
+            )   
             count += 1
 
         conn.close()
