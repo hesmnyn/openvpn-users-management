@@ -1,11 +1,12 @@
 import os
 import telnetlib
+from decouple import config
 
 # Management interface connection settings (configure via env vars)
-MGMT_HOST = os.getenv('OPENVPN_MGMT_HOST', '127.0.0.1')
-MGMT_PORT = int(os.getenv('OPENVPN_MGMT_PORT', 7505))
-MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
-OPEN_VPN_LOG = os.getenv('OPEN_VPN_LOG', '/var/log/openvpn/status.log')
+MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
+MGMT_PORT = int(config('OPENVPN_MGMT_PORT', default=7505))
+MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
+OPEN_VPN_LOG = config('OPEN_VPN_LOG', default='/var/log/openvpn/status.log')
 
 def get_connected_usernames():
     """

@@ -8,14 +8,15 @@ from django.contrib.admin.widgets import AdminDateWidget
 from django.urls import path
 from django.shortcuts import redirect
 from django.utils.html import format_html
+from decouple import config
 
 from .models import VPNUser
 from .utils import get_client_info, get_connected_usernames, get_connected_usernames_from_file, kill_user
 
 # Management interface configuration
-MGMT_HOST = os.getenv('OPENVPN_MGMT_HOST', '127.0.0.1')
-MGMT_PORT = int(os.getenv('OPENVPN_MGMT_PORT', 7505))
-MGMT_TIMEOUT = int(os.getenv('OPENVPN_MGMT_TIMEOUT', 5))  # seconds
+MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
+MGMT_PORT = int(config('OPENVPN_MGMT_PORT', default=7505))
+MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
 
 @admin.register(VPNUser)
 class VPNUserAdmin(admin.ModelAdmin):

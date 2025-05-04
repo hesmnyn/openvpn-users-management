@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +27,7 @@ SECRET_KEY = "django-insecure-a=j3#v_yyw2!m0&q6dcfk9$vs+jk$p668)t57ih@&8#2q%#e_@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-HOST_IP = os.getenv('HOST_IP', '127.0.0.1')
+HOST_IP = config('HOST_IP', default='127.0.0.1')
 
 ALLOWED_HOSTS = [HOST_IP, '127.0.0.1']
 
@@ -133,4 +134,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-OPENVPN_PSW_FILE = os.getenv('OPENVPN_PSW_FILE', '/etc/openvpn/psw-file')
+OPENVPN_PSW_FILE = config('OPENVPN_PSW_FILE', '/etc/openvpn/psw-file')
