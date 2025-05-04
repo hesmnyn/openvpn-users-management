@@ -25,6 +25,7 @@ class VPNUserAdmin(admin.ModelAdmin):
         'openvpn_password',
         'expiry_date',
         'is_active',
+        'max_connections',  # Added max_connections here
         'is_connected',
         'real_address',
         'virtual_address',
@@ -46,7 +47,6 @@ class VPNUserAdmin(admin.ModelAdmin):
         self._client_info = get_client_info()
 
         # Annotate with the numeric part of username for natural sorting
-        # Use regex on PostgreSQL, fallback to Substr on SQLite
         vendor = connection.vendor
         if vendor == 'postgresql':
             from django.db.models import Func
@@ -97,6 +97,10 @@ class VPNUserAdmin(admin.ModelAdmin):
     def virtual_address(self, obj):
         return self._client_info.get(obj.username, {}).get('virtual_address', '')
     virtual_address.short_description = 'Virtual Address'
+
+    def max_connections(self, obj):
+        return obj.max_connections
+    max_connections.short_description = 'Max Connections'
 
     def kill_button(self, obj):
         if obj.username in self._client_info:

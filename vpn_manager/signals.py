@@ -5,7 +5,6 @@ from django.utils import timezone
 from .models import VPNUser
 from .utils import kill_user
 from django.conf import settings
-from datetime import date
 
 PSW_FILE = settings.OPENVPN_PSW_FILE
 
@@ -16,16 +15,16 @@ def _load_users():
         with open(PSW_FILE) as f:
             for line in f:
                 if ':' in line:
-                    user, pwd = line.strip().split(':', 1)
-                    users[user] = pwd
+                    user, pwd, max_conns = line.strip().split(':', 2)
+                    users[user] = {'password': pwd, 'max_connections': max_conns}
     return users
 
 
 def _write_users(users):
     os.makedirs(os.path.dirname(PSW_FILE), exist_ok=True)
     with open(PSW_FILE, 'w') as f:
-        for user, pwd in users.items():
-            f.write(f"{user}:{pwd}\n")
+        for user, data in users.items():
+            f.write(f"{user}:{data['password']}:{data['max_connections']}\n")
 
 
 @receiver(post_save, sender=VPNUser)
@@ -33,7 +32,10 @@ def update_psw_file_on_save(sender, instance, **kwargs):
     users = _load_users()
     # If user is active, add/update; otherwise remove
     if instance.is_active:
-        users[instance.username] = instance.openvpn_password
+        users[instance.username] = {
+            'password': instance.openvpn_password,
+            'max_connections': instance.max_connections,
+        }
     else:
         users.pop(instance.username, None)
     _write_users(users)

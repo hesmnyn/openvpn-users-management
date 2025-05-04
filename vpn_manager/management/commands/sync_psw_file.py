@@ -11,12 +11,12 @@ PSW_FILE = settings.OPENVPN_PSW_FILE
 
 def _write_users(users):
     """
-    Write the users dictionary to the PSW file, one per line in 'username:password' format.
+    Write the users dictionary to the PSW file, one per line in 'username:password:max_connections' format.
     """
     os.makedirs(os.path.dirname(PSW_FILE), exist_ok=True)
     with open(PSW_FILE, 'w') as f:
-        for user, pwd in users.items():
-            f.write(f"{user}:{pwd}\n")
+        for user, data in users.items():
+            f.write(f"{user}:{data['password']}:{data['max_connections']}\n")
 
 
 class Command(BaseCommand):
@@ -26,11 +26,19 @@ class Command(BaseCommand):
         # Filter active, non-expired VPNUsers
         active_users = VPNUser.objects.filter(
             is_active=True, expiry_date__gte=date.today())
-        users = {u.username: u.openvpn_password for u in active_users}
+        users = {
+            u.username: {
+                'password': u.openvpn_password,
+                'max_connections': u.max_connections
+            }
+            for u in active_users
+        }
 
         _write_users(users)
         self.stdout.write(self.style.SUCCESS(
             f"Synced {len(users)} users to {PSW_FILE}"))
+
+        # Mark expired users as inactive
         expired_users = VPNUser.objects.exclude(
             is_active=True, expiry_date__gte=date.today())
         expired_users.update(is_active=False)
