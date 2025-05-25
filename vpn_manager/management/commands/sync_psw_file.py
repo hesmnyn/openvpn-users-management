@@ -25,7 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Filter active, non-expired VPNUsers
         active_users = VPNUser.objects.filter(
-            is_active=True, expiry_date__gte=date.today())
+            is_active=True, expiry_date__gte=date.today(), has_access_server_user=False)
         users = {
             u.username: {
                 'password': u.openvpn_password,

@@ -31,7 +31,7 @@ def _write_users(users):
 def update_psw_file_on_save(sender, instance, **kwargs):
     users = _load_users()
     # If user is active, add/update; otherwise remove
-    if instance.is_active:
+    if instance.is_active and not instance.has_access_server_user :
         users[instance.username] = {
             'password': instance.openvpn_password,
             'max_connections': instance.max_connections,
