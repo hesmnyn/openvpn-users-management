@@ -21,7 +21,7 @@ class VPNUser(models.Model):
         default=1,
         help_text="Maximum simultaneous connections for this user",
     )
-    has_access_server_user = models.BooleanField(default=False)
+    has_access_server_user = models.BooleanField(default=True)
 
 
     def __str__(self):
