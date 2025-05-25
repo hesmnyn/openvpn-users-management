@@ -3,7 +3,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import VPNUser
-from .utils import create_user_sacli_commands, delete_user_sacli_commands, kill_user, prop_deny_user_sacli_commands
+from .utils import create_user_sacli_commands, kill_user, prop_deny_user_sacli_commands
 from django.conf import settings
 
 PSW_FILE = settings.OPENVPN_PSW_FILE
