@@ -153,7 +153,7 @@ def create_user_sacli_commands(username: str, password: str):
         return False
     
 
-def prop_deny_user_sacli_commands(username: str, value: str = "false"):
+def prop_deny_user_sacli_commands(username: str, value: str):
     try:
         subprocess.run([
             'sacli',
