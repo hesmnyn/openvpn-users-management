@@ -99,7 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               textToCopy = `Expire Date: ${raw}`;
             }
-          } else {
+          } else if (fieldName === 'username') {
+            textToCopy = `Username: ${raw}`;
+          }
+          else if (fieldName === 'openvpn_password') {
+            textToCopy = `Password: ${raw}`;
+          }else{
             textToCopy = raw;
           }
   
