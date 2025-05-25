@@ -1,6 +1,9 @@
 import os
 import telnetlib
 from decouple import config
+import subprocess
+
+from vpn_manager.models import VPNUser
 
 # Management interface connection settings (configure via env vars)
 MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
@@ -83,24 +86,83 @@ def get_connected_usernames_from_file():
         return set()
     return users
 
+
 def kill_user(username):
-    """Admin view to send kill command via Telnet"""
+    """Admin view to send kill command via Telnet or via sacli if has_access_server_user"""
+    user = VPNUser.objects.get(username=username)
+    if user.has_access_server_user:
+        try:
+            # Run the sacli command
+            subprocess.run(
+                ['sacli', '-u', username, 'DisconnectUser'],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            # Log e.stderr or handle error as needed
+            return False
+    else:
+        try:
+            # Connect to management interface
+            tn = telnetlib.Telnet(MGMT_HOST, MGMT_PORT, timeout=MGMT_TIMEOUT)
+            # Read and discard the initial banner line
+            tn.read_until(b"\n", timeout=MGMT_TIMEOUT)
+            # Send kill command for the common name
+            cmd = f"kill {username}\n".encode('utf-8')
+            tn.write(cmd)
+            # Optionally read until the END marker to confirm
+            tn.read_until(b"END\n", timeout=MGMT_TIMEOUT)
+            tn.close()
+            return True
+        except Exception as e:
+            return False
+
+
+def create_user_sacli_commands(username: str, password: str):
     try:
-        # Connect to management interface
-        tn = telnetlib.Telnet(MGMT_HOST, MGMT_PORT, timeout=MGMT_TIMEOUT)
-        # Read and discard the initial banner line
-        tn.read_until(b"\n", timeout=MGMT_TIMEOUT)
-        # Send kill command for the common name
-        cmd = f"kill {username}\n".encode('utf-8')
-        tn.write(cmd)
-        # Optionally read until the END marker to confirm
-        tn.read_until(b"END\n", timeout=MGMT_TIMEOUT)
-        tn.close()
+        # 1. Set user_auth_type to local
+        subprocess.run([
+            'sacli', '-u', username,
+            '--key', 'user_auth_type',
+            '--value', 'local',
+            'UserPropPut'
+        ], check=True)
+
+        # 2. Set local password
+        subprocess.run([
+            'sacli', '-u', username,
+            '--new_pass', password,
+            'SetLocalPassword'
+        ], check=True)
+
+        # 3. Set prop_autologin to true
+        subprocess.run([
+            'sacli', '-u', username,
+            '--key', 'prop_autologin',
+            '--value', 'true',
+            'UserPropPut'
+        ], check=True)
+
         return True
-        # self.message_user(request, f"Sent kill command for {obj.username}", messages.SUCCESS)
-    except Exception as e:
-        # print(e)
+
+    except subprocess.CalledProcessError as e:
+        # Optionally log e.stdout or e.stderr here
+        print(f"Error running sacli command: {e}")
         return False
-        # self.message_user(request, f"Error sending kill command for {obj.username}: {e}", messages.ERROR)
-    # Redirect back to changelist
-    # return redirect(request.META.get('HTTP_REFERER', 'admin:index'))
+    
+
+def prop_deny_user_sacli_commands(username: str, value: str = "false"):
+    try:
+        subprocess.run([
+            'sacli',
+            '-u', username,
+            '-k', 'prop_deny',
+            '-v', value,
+            'UserPropPut'
+        ], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error setting prop_deny for {username}: {e}")
+        return False

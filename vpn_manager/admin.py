@@ -11,7 +11,7 @@ from django.utils.html import format_html
 from decouple import config
 
 from .models import VPNUser
-from .utils import get_client_info, get_connected_usernames, get_connected_usernames_from_file, kill_user
+from .utils import get_client_info, kill_user
 
 # Management interface configuration
 MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
@@ -40,6 +40,11 @@ class VPNUserAdmin(admin.ModelAdmin):
     class Media:
         js = ('vpn_manager/js/admin-copy-cell.js',)
         css = {'all': ('vpn_manager/css/admin-copy-cell.css',)}
+
+    
+    def has_delete_permission(self, request, obj=None):
+        # Disallow deletion for all users via admin
+        return False
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

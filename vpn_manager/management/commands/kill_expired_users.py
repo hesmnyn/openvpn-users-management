@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Filter active, non-expired VPNUsers
-        expired_users = VPNUser.objects.filter(has_access_server_user=False).exclude(
+        expired_users = VPNUser.objects.exclude(
             is_active=True, expiry_date__gte=date.today())
         current_users = get_client_info()
         counter = 0
