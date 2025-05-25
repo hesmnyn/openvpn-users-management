@@ -25,6 +25,7 @@ class VPNUserAdmin(admin.ModelAdmin):
         'openvpn_password',
         'expiry_date',
         'is_active',
+        'has_access_server_user',
         'max_connections',  # Added max_connections here
         'is_connected',
         'real_address',
