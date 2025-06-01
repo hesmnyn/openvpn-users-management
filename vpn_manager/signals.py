@@ -44,7 +44,7 @@ def update_psw_file_on_save(sender, instance, **kwargs):
                 if instance.is_active:
                     create_user_sacli_commands(instance.username, instance.openvpn_password)
                     prop_deny_user_sacli_commands(instance.username, "false")
-                else:
+                elif old_instance.is_active:
                     prop_deny_user_sacli_commands(instance.username, "true")
                     kill_user(instance.username, instance.has_access_server_user)
             else:
@@ -55,7 +55,7 @@ def update_psw_file_on_save(sender, instance, **kwargs):
                         'password': instance.openvpn_password,
                         'max_connections': instance.max_connections,
                     }
-                else:
+                elif old_instance.is_active:
                     users.pop(instance.username, None)
                     kill_user(instance.username, instance.has_access_server_user)
                 _write_users(users)
