@@ -22,6 +22,6 @@ class Command(BaseCommand):
         counter = 0
         for user in expired_users:
             if user.username in current_users:
-                kill_user(user.username)
+                kill_user(user.username, user.has_access_server_user)
                 counter+=1
         self.stdout.write(self.style.SUCCESS(f"Killed {counter} users"))

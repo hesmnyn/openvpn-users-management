@@ -129,10 +129,9 @@ def get_connected_usernames_from_file():
     return users
 
 
-def kill_user(username):
+def kill_user(username, has_access_server_user):
     """Admin view to send kill command via Telnet or via sacli if has_access_server_user"""
-    user = VPNUser.objects.get(username=username)
-    if user.has_access_server_user:
+    if has_access_server_user:
         try:
             # Run the sacli command
             subprocess.run(

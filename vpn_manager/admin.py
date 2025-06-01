@@ -125,7 +125,7 @@ class VPNUserAdmin(admin.ModelAdmin):
     def kill_user(self, request, pk, *args, **kwargs):
         obj = self.get_object(request, pk)
         try:
-            success = kill_user(obj.username)
+            success = kill_user(obj.username, obj.has_access_server_user)
             level = messages.SUCCESS if success else messages.ERROR
             msg = f"{'Disconnected' if success else 'Error disconnecting'} {obj.username}"
         except Exception as e:
