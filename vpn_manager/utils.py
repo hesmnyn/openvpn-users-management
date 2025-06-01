@@ -1,3 +1,4 @@
+import json
 import os
 import telnetlib
 from decouple import config
@@ -75,12 +76,13 @@ def get_client_info():
     try:
         # Execute the sacli command and parse the output
         result = subprocess.run(
-            [SACLI, "VPNStatus", "|", "jq", ".openvpn_0.client_list"],
+            f"{SACLI} VPNStatus | /usr/bin/jq '.openvpn_0.client_list'",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            shell=True,  # Run the command in a shell to handle the pipe
             check=True
-        )
+            )
         client_list = json.loads(result.stdout)
         
         for client in client_list:
