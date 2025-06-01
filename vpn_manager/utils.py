@@ -45,16 +45,6 @@ def get_connected_usernames():
         return set()
     return users
 
-import os
-import json
-import subprocess
-from django.conf import settings
-
-# Management interface configuration
-MGMT_HOST = settings.OPENVPN_MGMT_HOST
-MGMT_PORT = int(settings.OPENVPN_MGMT_PORT)
-MGMT_TIMEOUT = int(settings.OPENVPN_MGMT_TIMEOUT)
-OPEN_VPN_LOG = settings.OPEN_VPN_LOG
 
 
 def get_client_info():
