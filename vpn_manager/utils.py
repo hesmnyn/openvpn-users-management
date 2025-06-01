@@ -45,15 +45,27 @@ def get_connected_usernames():
         return set()
     return users
 
+import os
+import json
+import subprocess
+from django.conf import settings
+
+# Management interface configuration
+MGMT_HOST = settings.OPENVPN_MGMT_HOST
+MGMT_PORT = int(settings.OPENVPN_MGMT_PORT)
+MGMT_TIMEOUT = int(settings.OPENVPN_MGMT_TIMEOUT)
+OPEN_VPN_LOG = settings.OPEN_VPN_LOG
+
+
 def get_client_info():
     """
-    Connects to the OpenVPN management interface via Telnet,
-    issues 'status', and returns a dict mapping username -> {
-        'real_address': <Real Address>,
-        'virtual_address': <Virtual Address>
-    } for all currently connected clients.
+    Retrieves client info from both OpenVPN log file and from users with 
+    `has_access_server_user = True` using the sacli command, 
+    and returns a dictionary of {username: {real_address, virtual_address}}.
     """
     info = {}
+
+    # 1. Read from OpenVPN log
     try:
         with open(OPEN_VPN_LOG, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
@@ -67,9 +79,35 @@ def get_client_info():
                             'virtual_address': virt_addr,
                         }
     except Exception:
-        # On any error, return what we have (possibly empty)
-        pass
+        pass  # If reading the log fails, proceed with only the sacli results
+
+    # 2. Retrieve connected users with `has_access_server_user = True` using sacli command
+    try:
+        # Execute the sacli command and parse the output
+        result = subprocess.run(
+            [SACLI, "VPNStatus", "|", "jq", ".openvpn_0.client_list"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        client_list = json.loads(result.stdout)
+        
+        for client in client_list:
+            username = client[0].replace("_AUTOLOGIN", "")  # Username is at index 0 in the client info
+            real_addr = client[1]  # Real Address is at index 1
+            virt_addr = client[2]  # Virtual Address is at index 2
+
+            # Add to the info dictionary
+            info[username] = {
+                'real_address': real_addr,
+                'virtual_address': virt_addr,
+            }
+    except Exception as e:
+        print(f"Error fetching client info from sacli: {e}")
+
     return info
+
 
 def get_connected_usernames_from_file():
     """

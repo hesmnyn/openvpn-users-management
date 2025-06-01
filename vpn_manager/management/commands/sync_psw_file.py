@@ -43,6 +43,8 @@ class Command(BaseCommand):
         expired_users = VPNUser.objects.filter(has_access_server_user=False).exclude(
             is_active=True, expiry_date__gte=date.today())
         expired_users.update(is_active=False)
+
+        
         expired_users = VPNUser.objects.filter(has_access_server_user=True).exclude(
             is_active=True, expiry_date__gte=date.today())
         for user in expired_users:
