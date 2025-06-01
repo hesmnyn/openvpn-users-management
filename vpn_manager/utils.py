@@ -2,6 +2,8 @@ import os
 import telnetlib
 from decouple import config
 import subprocess
+from django.conf import settings
+
 
 from vpn_manager.models import VPNUser
 
@@ -10,6 +12,8 @@ MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
 MGMT_PORT = int(config('OPENVPN_MGMT_PORT', default=7505))
 MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
 OPEN_VPN_LOG = config('OPEN_VPN_LOG', default='/var/log/openvpn/status.log')
+
+SACLI = settings.SACLI_FULL_PATH
 
 def get_connected_usernames():
     """
@@ -94,7 +98,7 @@ def kill_user(username):
         try:
             # Run the sacli command
             subprocess.run(
-                ['sacli', '-u', username, 'DisconnectUser'],
+                [SACLI, '-u', username, 'DisconnectUser'],
                 check=True,
                 capture_output=True,
                 text=True
@@ -124,7 +128,7 @@ def create_user_sacli_commands(username: str, password: str):
     try:
         # 1. Set user_auth_type to local
         subprocess.run([
-            'sacli', '-u', username,
+            SACLI, '-u', username,
             '--key', 'user_auth_type',
             '--value', 'local',
             'UserPropPut'
@@ -132,14 +136,14 @@ def create_user_sacli_commands(username: str, password: str):
 
         # 2. Set local password
         subprocess.run([
-            'sacli', '-u', username,
+            SACLI, '-u', username,
             '--new_pass', password,
             'SetLocalPassword'
         ], check=True)
 
         # 3. Set prop_autologin to true
         subprocess.run([
-            'sacli', '-u', username,
+            SACLI, '-u', username,
             '--key', 'prop_autologin',
             '--value', 'true',
             'UserPropPut'
@@ -156,7 +160,7 @@ def create_user_sacli_commands(username: str, password: str):
 def prop_deny_user_sacli_commands(username: str, value: str):
     try:
         subprocess.run([
-            'sacli',
+            SACLI,
             '-u', username,
             '-k', 'prop_deny',
             '-v', value,

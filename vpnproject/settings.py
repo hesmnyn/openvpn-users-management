@@ -135,3 +135,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 OPENVPN_PSW_FILE = config('OPENVPN_PSW_FILE', '/etc/openvpn/psw-file')
+
+SACLI_FULL_PATH = config('SACLI_FULL_PATH', '/usr/sbin/sacli')
