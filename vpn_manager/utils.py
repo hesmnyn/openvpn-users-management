@@ -2,6 +2,7 @@ import json
 import os
 import telnetlib
 import subprocess
+from urllib.parse import quote
 
 import requests
 from decouple import config
@@ -17,8 +18,11 @@ MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
 OPEN_VPN_LOG = config('OPEN_VPN_LOG', default='/var/log/openvpn/status.log')
 
 SACLI = settings.SACLI_FULL_PATH
-CLIENT_INFO_API_URL = config('CLIENT_INFO_API_URL', default='http://127.0.0.1:8000/client-info')
+CLIENT_API_BASE_URL = config('CLIENT_API_BASE_URL', default='http://127.0.0.1:8000').rstrip('/')
+CLIENT_INFO_API_URL = f'{CLIENT_API_BASE_URL}/client-info'
 CLIENT_INFO_API_TIMEOUT = int(config('CLIENT_INFO_API_TIMEOUT', default=5))
+CLIENT_DISCONNECT_API_TEMPLATE = f'{CLIENT_API_BASE_URL}/client/{{username}}/disconnect',
+
 
 def get_connected_usernames():
     """
@@ -118,6 +122,25 @@ def get_client_info_via_api():
     except (requests.RequestException, ValueError) as exc:
         print(f'Error calling client-info API: {exc}')
     return {}
+
+
+def kill_user_via_api(username):
+    """Request a disconnect via the API; mirror kill_user by returning True/False."""
+    encoded_username = quote(str(username), safe='')
+    url = CLIENT_DISCONNECT_API_TEMPLATE.format(username=encoded_username)
+    try:
+        response = requests.get(url, timeout=CLIENT_INFO_API_TIMEOUT)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict):
+            if payload.get('ok', True):
+                return True
+            print(f"Disconnect API reported failure for {username}: {payload}")
+            return False
+        print('Unexpected response shape from disconnect API')
+    except (requests.RequestException, ValueError) as exc:
+        print(f"Error disconnecting {username} via API: {exc}")
+    return False
 
 
 def get_connected_usernames_from_file():

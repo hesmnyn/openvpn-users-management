@@ -11,7 +11,7 @@ from django.utils.html import format_html
 from decouple import config
 
 from .models import VPNUser
-from .utils import get_client_info, kill_user, get_client_info_via_api
+from .utils import get_client_info, kill_user, get_client_info_via_api, kill_user_via_api
 
 # Management interface configuration
 MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
@@ -127,7 +127,10 @@ class VPNUserAdmin(admin.ModelAdmin):
     def kill_user(self, request, pk, *args, **kwargs):
         obj = self.get_object(request, pk)
         try:
-            success = kill_user(obj.username, obj.has_access_server_user)
+            if obj.username in self._client_info_local:
+                success = kill_user(obj.username, obj.has_access_server_user)
+            elif obj.username in self._client_info_via_api:
+                success = kill_user_via_api(obj.username)
             level = messages.SUCCESS if success else messages.ERROR
             msg = f"{'Disconnected' if success else 'Error disconnecting'} {obj.username}"
         except Exception as e:
