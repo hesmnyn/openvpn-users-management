@@ -17,6 +17,7 @@ from .utils import get_client_info, kill_user, get_client_info_via_api, kill_use
 MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
 MGMT_PORT = int(config('OPENVPN_MGMT_PORT', default=7505))
 MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
+USE_API_CLIENT = config('OPENVPN_USE_API_CLIENT', default=False, cast=bool)
 
 @admin.register(VPNUser)
 class VPNUserAdmin(admin.ModelAdmin):
@@ -51,7 +52,7 @@ class VPNUserAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         # Fetch live client info
         self._client_info_local = get_client_info()
-        self._client_info_via_api = get_client_info_via_api()
+        self._client_info_via_api = get_client_info_via_api() if USE_API_CLIENT else {}
 
         self._client_info = { **self._client_info_local, **self._client_info_via_api }
         # Annotate with the numeric part of username for natural sorting
@@ -129,8 +130,10 @@ class VPNUserAdmin(admin.ModelAdmin):
         try:
             if obj.username in self._client_info_local:
                 success = kill_user(obj.username, obj.has_access_server_user)
-            elif obj.username in self._client_info_via_api:
+            elif USE_API_CLIENT and obj.username in self._client_info_via_api:
                 success = kill_user_via_api(obj.username)
+            else:
+                success = False
             level = messages.SUCCESS if success else messages.ERROR
             msg = f"{'Disconnected' if success else 'Error disconnecting'} {obj.username}"
         except Exception as e:
