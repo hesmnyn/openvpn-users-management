@@ -51,7 +51,7 @@ class VPNUserAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         # Fetch live client info
         self._client_info_local = get_client_info()
-        self._client_info_via_api = get_client_info_via_api
+        self._client_info_via_api = get_client_info_via_api()
 
         self._client_info = { **self._client_info_local, **self._client_info_via_api }
         # Annotate with the numeric part of username for natural sorting
