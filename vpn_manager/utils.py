@@ -1,8 +1,10 @@
 import json
 import os
 import telnetlib
-from decouple import config
 import subprocess
+
+import requests
+from decouple import config
 from django.conf import settings
 
 
@@ -15,6 +17,8 @@ MGMT_TIMEOUT = int(config('OPENVPN_MGMT_TIMEOUT', default=5))  # seconds
 OPEN_VPN_LOG = config('OPEN_VPN_LOG', default='/var/log/openvpn/status.log')
 
 SACLI = settings.SACLI_FULL_PATH
+CLIENT_INFO_API_URL = config('CLIENT_INFO_API_URL', default='http://127.0.0.1:8000/client-info')
+CLIENT_INFO_API_TIMEOUT = int(config('CLIENT_INFO_API_TIMEOUT', default=5))
 
 def get_connected_usernames():
     """
@@ -99,6 +103,21 @@ def get_client_info():
         print(f"Error fetching client info from sacli: {e}")
 
     return info
+
+
+
+def get_client_info_via_api():
+    """Call the FastAPI client-info endpoint and return the parsed payload."""
+    try:
+        response = requests.get(CLIENT_INFO_API_URL, timeout=CLIENT_INFO_API_TIMEOUT)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict):
+            return payload
+        print('Unexpected response shape from client-info API')
+    except (requests.RequestException, ValueError) as exc:
+        print(f'Error calling client-info API: {exc}')
+    return {}
 
 
 def get_connected_usernames_from_file():

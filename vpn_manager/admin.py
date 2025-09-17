@@ -11,7 +11,7 @@ from django.utils.html import format_html
 from decouple import config
 
 from .models import VPNUser
-from .utils import get_client_info, kill_user
+from .utils import get_client_info, kill_user, get_client_info_via_api
 
 # Management interface configuration
 MGMT_HOST = config('OPENVPN_MGMT_HOST', default='127.0.0.1')
@@ -50,8 +50,10 @@ class VPNUserAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         # Fetch live client info
-        self._client_info = get_client_info()
+        self._client_info_local = get_client_info()
+        self._client_info_via_api = get_client_info_via_api
 
+        self._client_info = { **self._client_info_local, **self._client_info_via_api }
         # Annotate with the numeric part of username for natural sorting
         vendor = connection.vendor
         if vendor == 'postgresql':
