@@ -21,7 +21,7 @@ SACLI = settings.SACLI_FULL_PATH
 CLIENT_API_BASE_URL = config('CLIENT_API_BASE_URL', default='http://127.0.0.1:8000').rstrip('/')
 CLIENT_INFO_API_URL = f'{CLIENT_API_BASE_URL}/client-info'
 CLIENT_INFO_API_TIMEOUT = int(config('CLIENT_INFO_API_TIMEOUT', default=5))
-CLIENT_DISCONNECT_API_TEMPLATE = f'{CLIENT_API_BASE_URL}/client/{{username}}/disconnect',
+CLIENT_DISCONNECT_API_TEMPLATE = f'{CLIENT_API_BASE_URL}/client/{{username}}/disconnect'
 
 
 def get_connected_usernames():
